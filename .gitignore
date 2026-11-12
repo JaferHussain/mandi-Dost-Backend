@@ -1,0 +1,7 @@
+bin/
+obj/
+*.user
+.vs/
+
+# Uploaded listing photos (local media storage)
+App_Data/
