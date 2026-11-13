@@ -3,5 +3,8 @@ obj/
 *.user
 .vs/
 
+# Server packages made by `dotnet publish` (contain a web.config that you fill in)
+publish/
+
 # Uploaded listing photos (local media storage)
 App_Data/

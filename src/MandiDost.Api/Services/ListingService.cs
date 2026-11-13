@@ -23,7 +23,7 @@ public interface IListingService
     Task<PagedResult<ListingSummaryDto>> GetFavoritesAsync(int userId, PageQuery page, CancellationToken ct = default);
 }
 
-public class ListingService(AppDbContext db, IMediaStorage media, TimeProvider clock) : IListingService
+public class ListingService(AppDbContext db, IMediaStorage media, TimeProvider clock, INotificationService notify) : IListingService
 {
     private DateTime Now => clock.GetUtcNow().UtcDateTime;
     private const double KmPerDegree = 111.32;
@@ -312,11 +312,13 @@ public class ListingService(AppDbContext db, IMediaStorage media, TimeProvider c
             throw new BadRequestException(ErrorCodes.ImageRequired, "Add at least one photo of the animal before publishing.");
 
         var now = Now;
+        var firstPublish = l.PublishedAtUtc is null; // renewing must not alert people again
         l.Status = ListingStatus.Active;
         l.PublishedAtUtc = now; // publishing again (renewing) moves it back to the top
         l.ExpiresAtUtc = now + ListingRules.ListingLifetime;
         l.UpdatedAtUtc = now;
         await db.SaveChangesAsync(ct);
+        if (firstPublish) await notify.NewListingPublishedAsync(id, ct);
         return await GetOwnAsync(id, ct);
     }
 

@@ -1128,3 +1128,137 @@ END;
 COMMIT;
 GO
 
+BEGIN TRANSACTION;
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261112155529_RemoveUnusedSocialTables'
+)
+BEGIN
+    DROP TABLE [Comments];
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261112155529_RemoveUnusedSocialTables'
+)
+BEGIN
+    DROP TABLE [Followers];
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261112155529_RemoveUnusedSocialTables'
+)
+BEGIN
+    DROP TABLE [Likes];
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261112155529_RemoveUnusedSocialTables'
+)
+BEGIN
+    DROP TABLE [Videos];
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261112155529_RemoveUnusedSocialTables'
+)
+BEGIN
+    INSERT INTO [__EFMigrationsHistory] ([MigrationId], [ProductVersion])
+    VALUES (N'20261112155529_RemoveUnusedSocialTables', N'10.0.14');
+END;
+
+COMMIT;
+GO
+
+BEGIN TRANSACTION;
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261113113600_AddNotifications'
+)
+BEGIN
+    CREATE TABLE [Notifications] (
+        [Id] int NOT NULL IDENTITY,
+        [UserId] int NOT NULL,
+        [Type] nvarchar(24) NOT NULL,
+        [ListingId] int NULL,
+        [RequestId] int NULL,
+        [Subject] nvarchar(160) NOT NULL,
+        [Place] nvarchar(80) NULL,
+        [DistanceKm] float NULL,
+        [Count] int NULL,
+        [Amount] bigint NULL,
+        [CreatedAtUtc] datetime2 NOT NULL,
+        [ReadAtUtc] datetime2 NULL,
+        [DedupeKey] nvarchar(48) NOT NULL,
+        CONSTRAINT [PK_Notifications] PRIMARY KEY ([Id]),
+        CONSTRAINT [FK_Notifications_Listings_ListingId] FOREIGN KEY ([ListingId]) REFERENCES [Listings] ([Id]),
+        CONSTRAINT [FK_Notifications_PurchaseRequests_RequestId] FOREIGN KEY ([RequestId]) REFERENCES [PurchaseRequests] ([Id]),
+        CONSTRAINT [FK_Notifications_Users_UserId] FOREIGN KEY ([UserId]) REFERENCES [Users] ([Id]) ON DELETE CASCADE
+    );
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261113113600_AddNotifications'
+)
+BEGIN
+    CREATE TABLE [NotificationSettings] (
+        [UserId] int NOT NULL,
+        [Enabled] bit NOT NULL,
+        [WantListings] bit NOT NULL,
+        [WantRequests] bit NOT NULL,
+        [RadiusKm] int NOT NULL,
+        [InterestCategoryIds] nvarchar(200) NULL,
+        [UpdatedAtUtc] datetime2 NOT NULL,
+        CONSTRAINT [PK_NotificationSettings] PRIMARY KEY ([UserId]),
+        CONSTRAINT [FK_NotificationSettings_Users_UserId] FOREIGN KEY ([UserId]) REFERENCES [Users] ([Id]) ON DELETE CASCADE
+    );
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261113113600_AddNotifications'
+)
+BEGIN
+    CREATE INDEX [IX_Notifications_ListingId] ON [Notifications] ([ListingId]);
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261113113600_AddNotifications'
+)
+BEGIN
+    CREATE INDEX [IX_Notifications_RequestId] ON [Notifications] ([RequestId]);
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261113113600_AddNotifications'
+)
+BEGIN
+    CREATE UNIQUE INDEX [IX_Notifications_UserId_DedupeKey] ON [Notifications] ([UserId], [DedupeKey]);
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261113113600_AddNotifications'
+)
+BEGIN
+    CREATE INDEX [IX_Notifications_UserId_Id] ON [Notifications] ([UserId], [Id]);
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261113113600_AddNotifications'
+)
+BEGIN
+    INSERT INTO [__EFMigrationsHistory] ([MigrationId], [ProductVersion])
+    VALUES (N'20261113113600_AddNotifications', N'10.0.14');
+END;
+
+COMMIT;
+GO
+

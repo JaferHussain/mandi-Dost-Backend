@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Mandi Dost API – settings for the live server (IIS / Plesk, Windows).
+
+  Fill in every PUT_..._HERE value ON THE SERVER, in Plesk's File Manager (Edit). Do not commit the filled-in file.
+  Use only letters and digits in passwords and keys: characters such as & < > " break this XML file.
+-->
+<configuration>
+  <location path="." inheritInChildApplications="false">
+    <system.webServer>
+      <handlers>
+        <add name="aspNetCore" path="*" verb="*" modules="AspNetCoreModuleV2" resourceType="Unspecified" />
+      </handlers>
+      <aspNetCore processPath=".\MandiDost.Api.exe" stdoutLogEnabled="false" stdoutLogFile=".\logs\stdout" hostingModel="inprocess">
+        <environmentVariables>
+          <environmentVariable name="ASPNETCORE_ENVIRONMENT" value="Production" />
+
+          <!-- 1. Database password: the MandiDost user's password from Plesk > Databases.
+               The server, database name and user are in appsettings.Production.json. -->
+          <environmentVariable name="Database__Password" value="PUT_DATABASE_PASSWORD_HERE" />
+
+          <!-- 2. Creates or updates the tables when the app starts. Leave "true" for the FIRST start, then change to "false". -->
+          <environmentVariable name="Database__MigrateOnStartup" value="true" />
+
+          <!-- 3. Login security: a long random key (32+ letters and digits). Anyone who knows it can forge logins, so keep it private. -->
+          <environmentVariable name="Jwt__SigningKey" value="PUT_A_LONG_RANDOM_KEY_HERE_32_OR_MORE_CHARACTERS" />
+
+          <!-- 4. Your administrator login (created once, on first start): phone like 03001234567 -->
+          <environmentVariable name="Seed__AdminPhone" value="PUT_ADMIN_PHONE_HERE" />
+          <environmentVariable name="Seed__AdminPassword" value="PUT_A_STRONG_ADMIN_PASSWORD_HERE" />
+
+          <!-- Optional, later: speech recognition for the "speak to the app" mic. Remove the comment marks and add the key.
+          <environmentVariable name="Voice__ApiKey" value="PUT_SPEECH_SERVICE_KEY_HERE" />
+          -->
+        </environmentVariables>
+      </aspNetCore>
+    </system.webServer>
+  </location>
+</configuration>

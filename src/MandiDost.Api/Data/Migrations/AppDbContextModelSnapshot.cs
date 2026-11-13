@@ -1154,6 +1154,100 @@ namespace MandiDost.Api.Data.Migrations
                     b.ToTable("Messages");
                 });
 
+            modelBuilder.Entity("MandiDost.Api.Entities.Notification", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<long?>("Amount")
+                        .HasColumnType("bigint");
+
+                    b.Property<int?>("Count")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("DedupeKey")
+                        .IsRequired()
+                        .HasMaxLength(48)
+                        .HasColumnType("nvarchar(48)");
+
+                    b.Property<double?>("DistanceKm")
+                        .HasColumnType("float");
+
+                    b.Property<int?>("ListingId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Place")
+                        .HasMaxLength(80)
+                        .HasColumnType("nvarchar(80)");
+
+                    b.Property<DateTime?>("ReadAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("RequestId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Subject")
+                        .IsRequired()
+                        .HasMaxLength(160)
+                        .HasColumnType("nvarchar(160)");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasMaxLength(24)
+                        .HasColumnType("nvarchar(24)");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ListingId");
+
+                    b.HasIndex("RequestId");
+
+                    b.HasIndex("UserId", "DedupeKey")
+                        .IsUnique();
+
+                    b.HasIndex("UserId", "Id");
+
+                    b.ToTable("Notifications");
+                });
+
+            modelBuilder.Entity("MandiDost.Api.Entities.NotificationSettings", b =>
+                {
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("Enabled")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("InterestCategoryIds")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<int>("RadiusKm")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("UpdatedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("WantListings")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("WantRequests")
+                        .HasColumnType("bit");
+
+                    b.HasKey("UserId");
+
+                    b.ToTable("NotificationSettings");
+                });
+
             modelBuilder.Entity("MandiDost.Api.Entities.PurchaseRequest", b =>
                 {
                     b.Property<int>("Id")
@@ -1836,6 +1930,36 @@ namespace MandiDost.Api.Data.Migrations
                     b.Navigation("Chat");
 
                     b.Navigation("Sender");
+                });
+
+            modelBuilder.Entity("MandiDost.Api.Entities.Notification", b =>
+                {
+                    b.HasOne("MandiDost.Api.Entities.Listing", null)
+                        .WithMany()
+                        .HasForeignKey("ListingId");
+
+                    b.HasOne("MandiDost.Api.Entities.PurchaseRequest", null)
+                        .WithMany()
+                        .HasForeignKey("RequestId");
+
+                    b.HasOne("MandiDost.Api.Entities.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("MandiDost.Api.Entities.NotificationSettings", b =>
+                {
+                    b.HasOne("MandiDost.Api.Entities.User", "User")
+                        .WithOne()
+                        .HasForeignKey("MandiDost.Api.Entities.NotificationSettings", "UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("MandiDost.Api.Entities.PurchaseRequest", b =>

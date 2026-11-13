@@ -6,6 +6,7 @@ using MandiDost.Api.Common;
 using MandiDost.Api.Data;
 using MandiDost.Api.Middleware;
 using MandiDost.Api.Services;
+using MandiDost.Api.Services.Voice;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -18,10 +19,21 @@ public static class ServiceCollectionExtensions
 {
     public static IServiceCollection AddDatabase(this IServiceCollection services, IConfiguration config)
     {
+        // Each environment has its own connection string: appsettings.Development.json (local PC) and
+        // appsettings.Production.json (live server). The live password is never in the repo: on the server,
+        // either replace Password=PUT_DATABASE_PASSWORD_HERE in that file, or set Database__Password in
+        // web.config (that one wins).
         var cs = config.GetConnectionString("Default");
         if (string.IsNullOrWhiteSpace(cs))
             throw new InvalidOperationException(
-                "ConnectionStrings:Default is not set. Run: dotnet user-secrets set \"ConnectionStrings:Default\" \"Server=(localdb)\\MSSQLLocalDB;Database=MandiDost;Trusted_Connection=True;TrustServerCertificate=True\"");
+                "ConnectionStrings:Default is not set. Put it in appsettings.{Environment}.json or set ConnectionStrings__Default.");
+
+        var password = config["Database:Password"];
+        if (!string.IsNullOrEmpty(password) && !password.StartsWith("PUT_", StringComparison.Ordinal))
+            cs = new Microsoft.Data.SqlClient.SqlConnectionStringBuilder(cs) { Password = password }.ConnectionString;
+        if (cs.Contains("PUT_DATABASE_PASSWORD_HERE", StringComparison.Ordinal))
+            throw new InvalidOperationException(
+                "The database password is not set. Replace PUT_DATABASE_PASSWORD_HERE in appsettings.Production.json, or set Database__Password in web.config.");
 
         services.AddDbContext<AppDbContext>(o => o.UseSqlServer(cs, sql => sql.EnableRetryOnFailure(3)));
         return services;
@@ -71,8 +83,13 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IPurchaseRequestService, PurchaseRequestService>();
         services.AddScoped<IChatService, ChatService>();
         services.AddScoped<ICommunityService, CommunityService>();
+        services.AddScoped<INotificationService, NotificationService>();
+        services.AddScoped<IVoiceService, VoiceService>();
         services.AddSingleton<IMediaStorage, LocalMediaStorage>();
         services.AddMemoryCache();
+        services.AddOptions<VoiceOptions>().BindConfiguration(VoiceOptions.Section);
+        // Speech recognition can be slow on long recordings; give up after 30 seconds instead of hanging the app.
+        services.AddHttpClient<ISpeechToText, OpenAiCompatibleSpeechToText>(c => c.Timeout = TimeSpan.FromSeconds(30));
         return services;
     }
 
@@ -115,6 +132,10 @@ public static class ServiceCollectionExtensions
             o.AddPolicy(AuthConstants.AuthRateLimitPolicy, http => RateLimitPartition.GetFixedWindowLimiter(
                 http.Connection.RemoteIpAddress?.ToString() ?? "unknown",
                 _ => new FixedWindowRateLimiterOptions { PermitLimit = permit, Window = TimeSpan.FromMinutes(1), QueueLimit = 0 }));
+            // Speech recognition costs money per recording: 20 per 10 minutes per user is plenty for talking to the app.
+            o.AddPolicy("voice", http => RateLimitPartition.GetFixedWindowLimiter(
+                http.User.FindFirst("sub")?.Value ?? http.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+                _ => new FixedWindowRateLimiterOptions { PermitLimit = 20, Window = TimeSpan.FromMinutes(10), QueueLimit = 0 }));
             o.OnRejected = async (ctx, ct) =>
             {
                 var pd = new ProblemDetails { Status = 429, Title = "Too many requests", Detail = "Please wait a minute and try again." };

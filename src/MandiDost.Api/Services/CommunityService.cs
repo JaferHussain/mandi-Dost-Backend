@@ -27,7 +27,7 @@ public interface ICommunityService
     Task<ReportDto> ResolveReportAsync(int adminId, int reportId, ResolveReportInput input, CancellationToken ct = default);
 }
 
-public class CommunityService(AppDbContext db, IBusinessService businesses, TimeProvider clock) : ICommunityService
+public class CommunityService(AppDbContext db, IBusinessService businesses, TimeProvider clock, INotificationService notify) : ICommunityService
 {
     /// <summary>A listing with this many separate open reports is hidden until a moderator looks at it.</summary>
     public const int AutoHideReportCount = 3;
@@ -85,6 +85,7 @@ public class CommunityService(AppDbContext db, IBusinessService businesses, Time
             await tx.CommitAsync(ct);
             return booking.Id;
         });
+        await notify.BookingRequestedAsync(bookingId, ct);
         return ToDto(await BookingQuery().FirstAsync(b => b.Id == bookingId, ct), showBuyerPhone: false);
     }
 
@@ -97,6 +98,7 @@ public class CommunityService(AppDbContext db, IBusinessService businesses, Time
         b.Status = confirm ? BookingStatus.Confirmed : BookingStatus.Declined;
         b.UpdatedAtUtc = Now;
         await db.SaveChangesAsync(ct);
+        await notify.BookingDecidedAsync(bookingId, ct);
         return ToDto(await BookingQuery().FirstAsync(x => x.Id == bookingId, ct), showBuyerPhone: true);
     }
 

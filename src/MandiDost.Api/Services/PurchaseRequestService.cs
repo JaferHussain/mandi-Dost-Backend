@@ -22,7 +22,7 @@ public interface IPurchaseRequestService
     Task<PagedResult<OfferDto>> GetMyOffersAsync(int sellerId, PageQuery page, CancellationToken ct = default);
 }
 
-public class PurchaseRequestService(AppDbContext db, TimeProvider clock) : IPurchaseRequestService
+public class PurchaseRequestService(AppDbContext db, TimeProvider clock, INotificationService notify) : IPurchaseRequestService
 {
     public static readonly TimeSpan RequestLifetime = TimeSpan.FromDays(30);
     private const double KmPerDegree = 111.32;
@@ -130,6 +130,7 @@ public class PurchaseRequestService(AppDbContext db, TimeProvider clock) : IPurc
         r.UpdatedAtUtc = now;
         db.PurchaseRequests.Add(r);
         await db.SaveChangesAsync(ct);
+        await notify.NewRequestPostedAsync(r.Id, ct);
         return await GetAsync(r.Id, buyerId, ct);
     }
 
@@ -268,6 +269,7 @@ public class PurchaseRequestService(AppDbContext db, TimeProvider clock) : IPurc
 
         var now = Now;
         var offer = await db.RequestOffers.FirstOrDefaultAsync(o => o.PurchaseRequestId == requestId && o.SellerId == sellerId, ct);
+        var firstOffer = offer is null || offer.Status == OfferStatus.Withdrawn; // changing a live offer doesn't alert the buyer again
         if (offer is null)
         {
             offer = new RequestOffer { PurchaseRequestId = requestId, SellerId = sellerId, CreatedAtUtc = now };
@@ -287,6 +289,7 @@ public class PurchaseRequestService(AppDbContext db, TimeProvider clock) : IPurc
         offer.UpdatedAtUtc = now;
         r.UpdatedAtUtc = now;
         await db.SaveChangesAsync(ct);
+        if (firstOffer) await notify.OfferReceivedAsync(offer.Id, ct);
         return await GetOfferAsync(offer.Id, showSellerPhone: false, ct);
     }
 
@@ -315,6 +318,7 @@ public class PurchaseRequestService(AppDbContext db, TimeProvider clock) : IPurc
         offer.Status = accept ? OfferStatus.Accepted : OfferStatus.Declined;
         offer.UpdatedAtUtc = Now;
         await db.SaveChangesAsync(ct);
+        await notify.OfferDecidedAsync(offerId, ct);
         return await GetOfferAsync(offerId, showSellerPhone: true, ct);
     }
 

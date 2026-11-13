@@ -29,6 +29,8 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     public DbSet<Message> Messages => Set<Message>();
     public DbSet<Review> Reviews => Set<Review>();
     public DbSet<Report> Reports => Set<Report>();
+    public DbSet<Notification> Notifications => Set<Notification>();
+    public DbSet<NotificationSettings> NotificationSettings => Set<NotificationSettings>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -59,6 +61,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
         builder.Properties<MessageType>().HaveConversion<string>().HaveMaxLength(16);
         builder.Properties<ReportReason>().HaveConversion<string>().HaveMaxLength(32);
         builder.Properties<ReportStatus>().HaveConversion<string>().HaveMaxLength(16);
+        builder.Properties<NotificationType>().HaveConversion<string>().HaveMaxLength(24);
 
         // All timestamps are UTC; datetime2 doesn't store DateTimeKind, so restore it on read.
         builder.Properties<DateTime>().HaveConversion<UtcConverter>();

@@ -67,6 +67,9 @@ public static class ErrorCodes
     public const string ReviewNotAllowed = "review_not_allowed";
     public const string AlreadyReported = "already_reported";
     public const string ReportNotFound = "report_not_found";
+    public const string NotificationNotFound = "notification_not_found";
+    public const string VoiceNotConfigured = "voice_not_configured";
+    public const string VoiceServiceFailed = "voice_service_failed";
     public const string RateLimited = "rate_limited";
     public const string ServerError = "server_error";
 }
