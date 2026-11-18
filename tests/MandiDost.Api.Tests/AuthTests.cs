@@ -36,6 +36,45 @@ public class AuthTests(ApiFactory factory) : IClassFixture<ApiFactory>
         Assert.Equal("phone_taken", await res.ErrorCodeAsync());
     }
 
+    [Fact]
+    public async Task Register_same_name_is_allowed_but_same_cnic_is_rejected()
+    {
+        var client = factory.CreateClient();
+        var first = await client.PostAsJsonAsync("/api/auth/register",
+            new { fullName = "محمد علی", phoneNumber = TestHelpers.NewPhone(), password = "Bakra#2026", cnic = "35202-7654321-9" });
+        Assert.Equal(HttpStatusCode.Created, first.StatusCode);
+
+        // Same name, different number and CNIC: fine
+        var sameName = await client.PostAsJsonAsync("/api/auth/register",
+            new { fullName = "محمد علی", phoneNumber = TestHelpers.NewPhone(), password = "Bakra#2026", cnic = "3520276543218" });
+        Assert.Equal(HttpStatusCode.Created, sameName.StatusCode);
+
+        // Same CNIC written without dashes: rejected
+        var sameCnic = await client.PostAsJsonAsync("/api/auth/register",
+            new { fullName = "کوئی اور", phoneNumber = TestHelpers.NewPhone(), password = "Bakra#2026", cnic = "3520276543219" });
+        Assert.Equal(HttpStatusCode.Conflict, sameCnic.StatusCode);
+        Assert.Equal("cnic_taken", await sameCnic.ErrorCodeAsync());
+
+        // No CNIC at all: allowed for many users
+        Assert.Equal(HttpStatusCode.Created, (await client.PostAsJsonAsync("/api/auth/register",
+            new { fullName = "بغیر شناختی کارڈ", phoneNumber = TestHelpers.NewPhone(), password = "Bakra#2026" })).StatusCode);
+        Assert.Equal(HttpStatusCode.Created, (await client.PostAsJsonAsync("/api/auth/register",
+            new { fullName = "بغیر شناختی کارڈ", phoneNumber = TestHelpers.NewPhone(), password = "Bakra#2026", cnic = "" })).StatusCode);
+    }
+
+    [Theory]
+    [InlineData("1234")]              // too short
+    [InlineData("35202-123456-1")]    // 12 digits
+    [InlineData("05202-1234567-1")]   // no province starts with 0
+    [InlineData("3520a-1234567-1")]   // letters
+    public async Task Register_rejects_invalid_cnic(string cnic)
+    {
+        var res = await factory.CreateClient().PostAsJsonAsync("/api/auth/register",
+            new { fullName = "ٹیسٹ", phoneNumber = TestHelpers.NewPhone(), password = "Bakra#2026", cnic });
+        Assert.Equal(HttpStatusCode.BadRequest, res.StatusCode);
+        Assert.Equal("validation_failed", await res.ErrorCodeAsync());
+    }
+
     [Theory]
     [InlineData("12345", "Bakra#2026")]        // not a PK mobile
     [InlineData("04212345678", "Bakra#2026")]  // landline

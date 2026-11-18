@@ -1262,3 +1262,32 @@ END;
 COMMIT;
 GO
 
+BEGIN TRANSACTION;
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261118045606_AddUserCnic'
+)
+BEGIN
+    ALTER TABLE [Users] ADD [Cnic] nvarchar(13) NULL;
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261118045606_AddUserCnic'
+)
+BEGIN
+    EXEC(N'CREATE UNIQUE INDEX [IX_Users_Cnic] ON [Users] ([Cnic]) WHERE [Cnic] IS NOT NULL');
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261118045606_AddUserCnic'
+)
+BEGIN
+    INSERT INTO [__EFMigrationsHistory] ([MigrationId], [ProductVersion])
+    VALUES (N'20261118045606_AddUserCnic', N'10.0.14');
+END;
+
+COMMIT;
+GO
+

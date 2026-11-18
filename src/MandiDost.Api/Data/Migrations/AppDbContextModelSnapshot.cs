@@ -1639,6 +1639,10 @@ namespace MandiDost.Api.Data.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<string>("Cnic")
+                        .HasMaxLength(13)
+                        .HasColumnType("nvarchar(13)");
+
                     b.Property<DateTime>("CreatedAtUtc")
                         .HasColumnType("datetime2");
 
@@ -1686,6 +1690,10 @@ namespace MandiDost.Api.Data.Migrations
                         .HasColumnType("nvarchar(16)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("Cnic")
+                        .IsUnique()
+                        .HasFilter("[Cnic] IS NOT NULL");
 
                     b.HasIndex("CreatedAtUtc");
 

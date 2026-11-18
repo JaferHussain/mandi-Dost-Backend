@@ -10,6 +10,8 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
     {
         b.Property(x => x.PhoneNumber).HasMaxLength(16).IsRequired();
         b.HasIndex(x => x.PhoneNumber).IsUnique();
+        b.Property(x => x.Cnic).HasMaxLength(13);
+        b.HasIndex(x => x.Cnic).IsUnique().HasFilter("[Cnic] IS NOT NULL"); // many users without a CNIC are allowed
         b.Property(x => x.PasswordHash).HasMaxLength(256).IsRequired();
         b.Property(x => x.FullName).HasMaxLength(80).IsRequired();
         b.HasIndex(x => x.CreatedAtUtc);

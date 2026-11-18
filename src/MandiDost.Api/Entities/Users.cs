@@ -9,6 +9,9 @@ public class User
     public string PasswordHash { get; set; } = "";
     public string FullName { get; set; } = "";
 
+    /// <summary>National ID card number (CNIC), 13 digits without dashes. Optional; unique when given. Names may repeat.</summary>
+    public string? Cnic { get; set; }
+
     public UserRole Role { get; set; } = UserRole.User;
     public VerificationLevel Verification { get; set; } = VerificationLevel.None;
     public bool PhoneVerified { get; set; }

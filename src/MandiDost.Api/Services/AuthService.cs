@@ -39,6 +39,10 @@ public class AuthService(
         if (await db.Users.AnyAsync(u => u.PhoneNumber == phone, ct))
             throw new ConflictException(ErrorCodes.PhoneTaken, "An account with this phone number already exists.");
 
+        var cnic = Cnic.Normalize(request.Cnic); // null when not given (the DTO already rejected invalid ones)
+        if (cnic is not null && await db.Users.AnyAsync(u => u.Cnic == cnic, ct))
+            throw new ConflictException(ErrorCodes.CnicTaken, "An account with this CNIC already exists.");
+
         if (request.LocationId is { } locId && !await db.Locations.AnyAsync(l => l.Id == locId && l.IsActive, ct))
             throw new BadRequestException(ErrorCodes.LocationNotFound, "Unknown location.");
 
@@ -46,6 +50,7 @@ public class AuthService(
         {
             PhoneNumber = phone,
             FullName = request.FullName.Trim(),
+            Cnic = cnic,
             CreatedAtUtc = Now,
             UpdatedAtUtc = Now,
             LastLoginAtUtc = Now,
@@ -60,10 +65,12 @@ public class AuthService(
         }
         catch (DbUpdateException)
         {
-            // Two sign-ups with the same number at the same moment – the unique index caught it.
+            // Two sign-ups with the same number or CNIC at the same moment – the unique index caught it.
             db.ChangeTracker.Clear();
             if (await db.Users.AnyAsync(u => u.PhoneNumber == phone, ct))
                 throw new ConflictException(ErrorCodes.PhoneTaken, "An account with this phone number already exists.");
+            if (cnic is not null && await db.Users.AnyAsync(u => u.Cnic == cnic, ct))
+                throw new ConflictException(ErrorCodes.CnicTaken, "An account with this CNIC already exists.");
             throw;
         }
 

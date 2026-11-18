@@ -24,6 +24,7 @@ public sealed class BadRequestException(string code, string message) : AppExcept
 public static class ErrorCodes
 {
     public const string PhoneTaken = "phone_taken";
+    public const string CnicTaken = "cnic_taken";
     public const string InvalidCredentials = "invalid_credentials";
     public const string AccountLocked = "account_locked";
     public const string AccountDisabled = "account_disabled";

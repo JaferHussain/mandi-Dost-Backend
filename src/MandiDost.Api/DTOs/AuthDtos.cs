@@ -11,6 +11,10 @@ public class RegisterRequest
     [Required, PakistaniMobile]
     public string PhoneNumber { get; set; } = "";
 
+    /// <summary>Optional CNIC (13 digits, dashes allowed). Must not belong to another account.</summary>
+    [PakistaniCnic]
+    public string? Cnic { get; set; }
+
     /// <summary>6–64 characters. A 6-digit PIN is allowed – easier for users who don't type much.</summary>
     [Required, StringLength(64, MinimumLength = 6)]
     public string Password { get; set; } = "";
